@@ -9,8 +9,19 @@ import java.util.Map;
 
 public class Analisador {
 
+    private Map<Integer, Map<String, Integer>> dadosDasUrnas;
+
+    public void setDadosDasUrnas(Map<Integer, Map<String, Integer>> dadosDasUrnas) {
+        this.dadosDasUrnas = dadosDasUrnas;
+    }
+
+    public Map<Integer, Map<String, Integer>> getDadosDasUrnas() {
+        return dadosDasUrnas;
+    }
+
+
     // Método para processar os votos e retornar totais por tipo
-    public static Map<String, Integer> processarVotos(String caminhoArquivo) {
+    public Map<String, Integer> processarVotos(String caminhoArquivo) {
         // Mapa para armazenar a contagem de votos por urna
         Map<Integer, Map<String, Integer>> contagemUrnas = new HashMap<>();
         
@@ -40,10 +51,10 @@ public class Analisador {
                 // Identifica o voto
                 String tipoVoto = "";
 
-                if (codigo.equals("0")) {
+                if (codigo.equals("1")) {
                     tipoVoto = "Em Branco";
                     votosBrancos++; // Incrementa votos em branco
-                } else if (codigo.equals("1")) {
+                } else if (codigo.equals("0")) {
                     tipoVoto = "Nulo";
                     votosNulos++; // Incrementa votos nulos
                 } else {
@@ -56,6 +67,8 @@ public class Analisador {
                 // Atualiza a contagem de votos para o tipo (branco, nulo ou candidato) na urna atual
                 Map<String, Integer> votosPorTipo = contagemUrnas.get(numeroUrna);
                 votosPorTipo.put(tipoVoto, votosPorTipo.getOrDefault(tipoVoto, 0) + 1);
+
+                setDadosDasUrnas(contagemUrnas);
 
                 // Incrementa o total de votos
                 totalVotos++;
@@ -99,9 +112,33 @@ public class Analisador {
 
         double percentualBranco = (double) totalVotosBranco / totalVotos * 100;
         double percentualNulo = (double) totalVotosNulos / totalVotos * 100;
+        double percentualValidos = (double) (totalVotos - (totalVotosNulos + totalVotosBranco)) / totalVotos * 100;
 
         System.out.println("\nPercentuais de votos:");
         System.out.println("Votos em Branco: " + String.format("%.2f", percentualBranco) + "%");
         System.out.println("Votos Nulos: " + String.format("%.2f", percentualNulo) + "%");
+        System.out.println("Votos válidos: " + String.format("%.2f", percentualValidos) + "%");
     }
+
+
+    public Map<String, Integer> VotosPorCandidato (Map<Integer, Map<String , Integer>> dadosDasUrnas){
+
+        Map<String, Integer> votosCandidatos = new HashMap<>();
+
+        for(Map.Entry<Integer, Map<String, Integer>> entrada : dadosDasUrnas.entrySet()){
+            System.out.println(entrada.getKey());
+
+        }
+        
+        
+
+
+
+        return votosCandidatos;
+
+
+
+    }
+
+
 }
