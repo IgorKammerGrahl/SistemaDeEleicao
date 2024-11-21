@@ -124,9 +124,20 @@ public class Analisador {
     public Map<String, Integer> VotosPorCandidato (Map<Integer, Map<String , Integer>> dadosDasUrnas){
 
         Map<String, Integer> votosCandidatos = new HashMap<>();
-
+        String candidato = "";
+        int qtd_votos = 0;
+        
         for(Map.Entry<Integer, Map<String, Integer>> entrada : dadosDasUrnas.entrySet()){
-            System.out.println(entrada.getKey());
+            
+            Map<String, Integer> dadosVotos = entrada.getValue();
+            
+            for(Map.Entry<String,Integer> dados : dadosVotos.entrySet()){
+                candidato = dados.getKey();
+                qtd_votos = dados.getValue();
+                
+                votosCandidatos.put(candidato, votosCandidatos.getOrDefault(candidato, 0) + qtd_votos);
+            }
+
 
         }
         
