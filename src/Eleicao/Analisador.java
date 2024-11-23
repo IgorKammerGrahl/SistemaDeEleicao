@@ -232,4 +232,62 @@ public class Analisador {
 
 		return new HashMap<>();
 	}
+
+	public double calcularQuocienteEleitoral(String caminhoArquivo, int numeroCadeiras) {
+		Map<String, Integer> totais = processarVotos(caminhoArquivo);
+		int totalVotosValidos = totais.get("Total de Votos") - totais.get("Votos em Branco") - totais.get("Votos Nulos");
+
+		if (numeroCadeiras <= 0 || totalVotosValidos <= 0) {
+			throw new IllegalArgumentException("Número de cadeiras ou total de votos válidos inválidos.");
+		}
+
+		return (double) totalVotosValidos / numeroCadeiras;
+	}
+
+	public Map<String, Integer> calcularQuocientePartidario(String caminhoArquivo, int numeroCadeiras) {
+		double quocienteEleitoral = calcularQuocienteEleitoral(caminhoArquivo, numeroCadeiras);
+
+		// Criar um mapa para armazenar os votos por legenda
+		Map<String, Integer> votosPorLegenda = new HashMap<>();
+		try {
+			List<String> linhas = Files.readAllLines(Paths.get(caminhoArquivo));
+			for (String linha : linhas) {
+				String[] partes = linha.split(";");
+				if (partes.length < 2) {
+					continue; 
+				}
+
+				String codigo = partes[1];
+				if (codigo.equals("0") || codigo.equals("1")) {
+					continue; 
+				}
+
+				String legenda = codigo.substring(0, 2);
+
+				// Atualizar os votos da legenda no mapa
+				if (votosPorLegenda.containsKey(legenda)) {
+					int votosAtuais = votosPorLegenda.get(legenda);
+					votosPorLegenda.put(legenda, votosAtuais + 1);
+				} else {
+					votosPorLegenda.put(legenda, 1);
+				}
+			}
+		} catch (IOException e) {
+			System.out.println("Erro ao ler o arquivo: " + e.getMessage());
+		}
+
+		// Calcular o número de cadeiras para cada partido
+		Map<String, Integer> cadeirasPorLegenda = new HashMap<>();
+		for (String legenda : votosPorLegenda.keySet()) {
+			int votos = votosPorLegenda.get(legenda);
+
+			// Dividir os votos da legenda pelo QE para obter as cadeiras
+			int cadeiras = (int) (votos / quocienteEleitoral);
+			cadeirasPorLegenda.put(legenda, cadeiras);
+		}
+
+		// Retornar o resultado
+		return cadeirasPorLegenda;
+	}
+
 }
