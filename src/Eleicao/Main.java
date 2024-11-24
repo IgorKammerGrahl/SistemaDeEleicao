@@ -6,6 +6,7 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) {
         String caminhoArquivo = "C:/Users/igork/Eleicoes/Desktop/Eleicoes/src/votos.txt";
+        int numeroCadeiras = 10;
 
         final int cadeiras = 10;
         
@@ -43,11 +44,17 @@ public class Main {
         for (Map.Entry<String, String> entrada : votosPorLegenda.entrySet()) {
             System.out.println("Legenda: " + entrada.getKey() + " - " + entrada.getValue());
         }
+        
+        // Quociente Eleitoral
+        double quocienteEleitoral = analisador.calcularQuocienteEleitoral(caminhoArquivo, numeroCadeiras);
+        System.out.println("Quociente Eleitoral: " + quocienteEleitoral);
 
-        int q_e = analisador.calculo_Qe(votoValidos, cadeiras);
-        cadeirasPorPartido = analisador.calculo_Qp(q_e);
+        // Quociente Partidário
+        Map<String, Integer> quocientePartidario = analisador.calcularQuocientePartidario(caminhoArquivo, numeroCadeiras);
 
-
-        analisador.Eleitos(cadeirasPorPartido, votosPorCandidato, q_e);
+        System.out.println("Quociente Partidário (Cadeiras por Partido):");
+        for (Map.Entry<String, Integer> entry : quocientePartidario.entrySet()) {
+            System.out.println("Legenda: " + entry.getKey() + " - Cadeiras: " + entry.getValue());
+        }
     }
 }
