@@ -1,13 +1,6 @@
 package Eleicao;
 
-
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
+import java.util.*;
 
 public class Analisador {
 
@@ -22,7 +15,6 @@ public class Analisador {
         return votosPorLegenda;
     }
 
-
     public void setDadosDasUrnas(Map<Integer, Map<String, Integer>> dadosDasUrnas) {
         this.dadosDasUrnas = dadosDasUrnas;
     }
@@ -31,81 +23,36 @@ public class Analisador {
         return dadosDasUrnas;
     }
 
-
-    // Método para processar os votos e retornar totais por tipo
-    public Map<String, Integer> processarVotos(String caminhoArquivo) {
-        // Mapa para armazenar a contagem de votos por urna
+    public Map<String, Integer> processarVotos(List<String> linhas) {
         Map<Integer, Map<String, Integer>> contagemUrnas = new HashMap<>();
-        
-        // Contadores para votos totais, votos em branco e votos nulos
         int totalVotos = 0;
         int votosBrancos = 0;
         int votosNulos = 0;
 
-        try {
-            List<String> linhas = Files.readAllLines(Paths.get(caminhoArquivo));
-            
-            for (String linha : linhas) {
-                // Extrai a urna e o código do partido/candidato
-                String[] partes = linha.split(";");
-                
-                // Verifica se a linha tem a estrutura correta antes de processar
-                if (partes.length < 2) {
-                    continue; // Se a linha não tem pelo menos 2 partes, pula ela
-                }
+        for (String linha : linhas) {
+            String[] partes = linha.split(";");
+            if (partes.length < 2) continue;
 
-                // Extrai o número da urna
-                int numeroUrna = Integer.parseInt(partes[0]);
+            int numeroUrna = Integer.parseInt(partes[0]);
+            String codigo = partes[1];
+            String tipoVoto = "";
 
-                // Verifica o código do partido ou candidato
-                String codigo = partes[1];
-
-                // Identifica o voto
-                String tipoVoto = "";
-
-                if (codigo.equals("1")) {
-                    tipoVoto = "Em Branco";
-                    votosBrancos++; // Incrementa votos em branco
-                } else if (codigo.equals("0")) {
-                    tipoVoto = "Nulo";
-                    votosNulos++; // Incrementa votos nulos
-                } else {
-                    tipoVoto = "Candidato " + codigo;
-                }
-
-                // Verifica se a urna já está no mapa; caso contrário, cria a entrada
-                contagemUrnas.putIfAbsent(numeroUrna, new HashMap<>());
-                
-                // Atualiza a contagem de votos para o tipo (branco, nulo ou candidato) na urna atual
-                Map<String, Integer> votosPorTipo = contagemUrnas.get(numeroUrna);
-                votosPorTipo.put(tipoVoto, votosPorTipo.getOrDefault(tipoVoto, 0) + 1);
-
-                setDadosDasUrnas(contagemUrnas);
-
-                // Incrementa o total de votos
-                totalVotos++;
+            if (codigo.equals("1")) {
+                tipoVoto = "Em Branco";
+                votosBrancos++;
+            } else if (codigo.equals("0")) {
+                tipoVoto = "Nulo";
+                votosNulos++;
+            } else {
+                tipoVoto = "Candidato " + codigo;
             }
 
-            // Exibe o resumo de votos por urna
-            System.out.println("Resumo de votos por urna:");
-            for (Map.Entry<Integer, Map<String, Integer>> urnaEntry : contagemUrnas.entrySet()) {
-                int urna = urnaEntry.getKey();
-                System.out.println("Urna " + urna + ":");
-                Map<String, Integer> votosPorTipo = urnaEntry.getValue();
-                
-                for (Map.Entry<String, Integer> tipoEntry : votosPorTipo.entrySet()) {
-                    String tipoVoto = tipoEntry.getKey();
-                    int votos = tipoEntry.getValue();
+            contagemUrnas.putIfAbsent(numeroUrna, new HashMap<>());
+            Map<String, Integer> votosPorTipo = contagemUrnas.get(numeroUrna);
+            votosPorTipo.put(tipoVoto, votosPorTipo.getOrDefault(tipoVoto, 0) + 1);
 
-                    // Exibe o resultado de acordo com o tipo de voto
-                    System.out.println("  " + tipoVoto + ": " + votos + " votos");
-                }
-            }
-
-        } catch (IOException e) {
-            System.err.println("Erro ao ler o arquivo: " + e.getMessage());
-        } catch (NumberFormatException e) {
-            System.err.println("Erro ao converter número: " + e.getMessage());
+            setDadosDasUrnas(contagemUrnas);
+            totalVotos++;
         }
 
         Map<String, Integer> totaisVotos = new HashMap<>();
@@ -115,7 +62,7 @@ public class Analisador {
 
         return totaisVotos;
     }
-    
+
     public static void calcularPercentuais(int totalVotosBranco, int totalVotosNulos, int totalVotos) {
         if (totalVotos == 0) {
             System.out.println("Total de votos é zero, não é possível calcular percentuais.");
@@ -126,295 +73,166 @@ public class Analisador {
         double percentualNulo = (double) totalVotosNulos / totalVotos * 100;
         double percentualValidos = (double) (totalVotos - (totalVotosNulos + totalVotosBranco)) / totalVotos * 100;
 
-        
-
         System.out.println("\nPercentuais de votos:");
         System.out.println("Votos em Branco: " + String.format("%.2f", percentualBranco) + "%");
         System.out.println("Votos Nulos: " + String.format("%.2f", percentualNulo) + "%");
         System.out.println("Votos válidos: " + String.format("%.2f", percentualValidos) + "%");
     }
 
-
-    public Map<String, Integer> VotosPorCandidato (Map<Integer, Map<String , Integer>> dadosDasUrnas){
-
+    public Map<String, Integer> VotosPorCandidato(Map<Integer, Map<String, Integer>> dadosDasUrnas) {
         Map<String, Integer> votosCandidatos = new HashMap<>();
-        String candidato = "";
-        int qtd_votos = 0;
-        
-        for(Map.Entry<Integer, Map<String, Integer>> entrada : dadosDasUrnas.entrySet()){
-            
-            Map<String, Integer> dadosVotos = entrada.getValue();
-            
-            for(Map.Entry<String,Integer> dados : dadosVotos.entrySet()){
-                candidato = dados.getKey();
-                qtd_votos = dados.getValue();
-                String[] partes = candidato.split(" ");
 
-                if(partes[0].equalsIgnoreCase("Candidato")){
-                    votosCandidatos.put(candidato, votosCandidatos.getOrDefault(candidato, 0) + qtd_votos);
+        for (Map<String, Integer> votos : dadosDasUrnas.values()) {
+            for (Map.Entry<String, Integer> entrada : votos.entrySet()) {
+                String candidato = entrada.getKey();
+                int qtdVotos = entrada.getValue();
+
+                if (candidato.startsWith("Candidato")) {
+                    votosCandidatos.put(candidato, votosCandidatos.getOrDefault(candidato, 0) + qtdVotos);
                 }
-                
             }
-
-            
         }
-        for(Map.Entry<String,Integer> entry: votosCandidatos.entrySet()){
 
-            System.out.print(entry.getKey() + ": ");
-            System.out.println(" Total de votos = " + entry.getValue());
-        }            
-        
         return votosCandidatos;
-
     }
 
+    public List<String> obterTopCandidatos(List<String> linhas, int n) {
+        Map<String, Integer> votosCandidatos = new HashMap<>();
 
-    public List<String> obterTopCandidatos(String caminhoArquivo, int n) {
-		Map<String, Integer> votosCandidatos = new HashMap<>();
+        for (String linha : linhas) {
+            String[] partes = linha.split(";");
+            if (partes.length < 2) continue;
 
-		try {
-			List<String> linhas = Files.readAllLines(Paths.get(caminhoArquivo));
-
-			for (String linha : linhas) {
-				String[] partes = linha.split(";");
-
-				if (partes.length < 2) continue;
-
-				String codigo = partes[1];
-
-				// Se o código não for 0 ou 1 (códigos inválidos), processa o voto
-				if (!codigo.equals("0") && !codigo.equals("1")) {
-					String candidato = "Candidato " + codigo;
-
-					// Conta os votos
-					int votos = votosCandidatos.getOrDefault(candidato, 0) + 1;
-
-					// Atualiza o mapa com o novo número de votos
-					votosCandidatos.put(candidato, votos);
-				}
-			}
-
-			List<String> topCandidatos = new ArrayList<>();
-
-			// Ordena os candidatos pela quantidade de votos (do maior para o menor)
-			// E pega apenas os 'n' mais votados
-			List<Map.Entry<String, Integer>> listaOrdenada = new ArrayList<>(votosCandidatos.entrySet());
-			listaOrdenada.sort((a, b) -> b.getValue().compareTo(a.getValue()));
-
-			// Adiciona os candidatos mais votados na lista final
-			for (int i = 0; i < Math.min(n, listaOrdenada.size()); i++) {
-				Map.Entry<String, Integer> candidato = listaOrdenada.get(i);
-				topCandidatos.add(candidato.getKey() + " - " + candidato.getValue() + " votos");
-			}
-
-			return topCandidatos;
-
-		} catch (IOException e) {
-			System.err.println("Erro ao ler o arquivo: " + e.getMessage());
-		}
-		return new ArrayList<>();
-	}
-
-
-	public Map<String, String> calcularVotosPorLegenda(String caminhoArquivo) {
-		Map<String, Integer> votosPorLegenda = new HashMap<>();
-		int totalVotosValidos = 0;
-
-		try {
-			List<String> linhas = Files.readAllLines(Paths.get(caminhoArquivo));
-
-			for (String linha : linhas) {
-				String[] partes = linha.split(";");
-
-				if (partes.length < 2) continue;
-
-				String codigo = partes[1];
-
-				if (codigo.equals("0") || codigo.equals("1")) continue;
-
-				// Pega os dois primeiros caracteres como a legenda
-				String legenda = codigo.substring(0, 2);
-
-				// Conta os votos por legenda
-				votosPorLegenda.put(legenda, votosPorLegenda.getOrDefault(legenda, 0) + 1);
-				totalVotosValidos++;
-			}
-
-            setVotosPorLegenda(votosPorLegenda);
-
-			Map<String, String> resultado = new HashMap<>();
-
-			// Para cada legenda, calcula o número de votos e o percentual
-			for (String legenda : votosPorLegenda.keySet()) {
-				int votos = votosPorLegenda.get(legenda);
-				double percentual = (double) votos / totalVotosValidos * 100;
-
-				resultado.put(legenda, votos + " votos (" + Math.round(percentual) + "%)");
-			}
-			// Retorna o mapa com as informações das legendas
-			return resultado;
-
-		} catch (IOException e) {
-			System.err.println("Erro ao ler o arquivo: " + e.getMessage());
-		}
-
-		return new HashMap<>();
-	}
-
-    public Map<String,Integer> calculo_Qp(int q_e){
-
-        
-        Map<String, Integer> cadeiras = new HashMap<>();
-
-        int cont = 0;
-        int q_p;
-        int vagas = 0;
-
-        for(Map.Entry<String,Integer> partido : votosPorLegenda.entrySet()){
-
-            int qtd_votos = partido.getValue();
-            q_p = 0;
-            q_p = qtd_votos / q_e;
-
-            if(q_p != 0){
-                vagas += q_p;
+            String codigo = partes[1];
+            if (!codigo.equals("0") && !codigo.equals("1")) {
+                String candidato = "Candidato " + codigo;
+                votosCandidatos.put(candidato, votosCandidatos.getOrDefault(candidato, 0) + 1);
             }
-
-            cadeiras.put(partido.getKey(), q_p);
-            
         }
 
-        while(vagas < 10){
+        List<Map.Entry<String, Integer>> listaOrdenada = new ArrayList<>(votosCandidatos.entrySet());
+        listaOrdenada.sort((a, b) -> b.getValue().compareTo(a.getValue()));
 
+        List<String> topCandidatos = new ArrayList<>();
+        for (int i = 0; i < Math.min(n, listaOrdenada.size()); i++) {
+            Map.Entry<String, Integer> candidato = listaOrdenada.get(i);
+            topCandidatos.add(candidato.getKey() + " - " + candidato.getValue() + " votos");
+        }
+
+        return topCandidatos;
+    }
+
+    public Map<String, String> calcularVotosPorLegenda(List<String> linhas) {
+        votosPorLegenda = new HashMap<>(); 
+        int totalVotosValidos = 0;
+
+        for (String linha : linhas) {
+            String[] partes = linha.split(";");
+            if (partes.length < 2) continue;
+
+            String codigo = partes[1];
+            if (codigo.equals("0") || codigo.equals("1")) continue;
+
+            String legenda = codigo.substring(0, 2);
+            votosPorLegenda.put(legenda, votosPorLegenda.getOrDefault(legenda, 0) + 1);
+            totalVotosValidos++;
+        }
+
+        Map<String, String> resultado = new HashMap<>();
+        for (String legenda : votosPorLegenda.keySet()) {
+            int votos = votosPorLegenda.get(legenda);
+            double percentual = (double) votos / totalVotosValidos * 100;
+            resultado.put(legenda, votos + " votos (" + Math.round(percentual) + "%)");
+        }
+
+        return resultado;
+    }
+
+    public Map<String, Integer> calculo_Qp(int quocienteEleitoral) {
+        Map<String, Integer> cadeiras = new HashMap<>();
+        int vagas = 0;
+
+        for (Map.Entry<String, Integer> partido : votosPorLegenda.entrySet()) {
+            int qtdVotos = partido.getValue();
+            int q_p = qtdVotos / quocienteEleitoral;
+
+            if (q_p > 0) vagas += q_p;
+            cadeiras.put(partido.getKey(), q_p);
+        }
+
+        while (vagas < 10) {
             double maiorProporcao = -1;
             String partidoEscolhido = null;
 
-            for(Map.Entry<String, Integer> entry : cadeiras.entrySet()){
+            for (Map.Entry<String, Integer> entry : cadeiras.entrySet()) {
+                String partido = entry.getKey();
+                double proporcaoAtual = (double) votosPorLegenda.get(partido) / (entry.getValue() + 1);
 
-                double totalVotosP = votosPorLegenda.get(entry.getKey());
-
-
-                if(cont > 0){
-
-                    double proporcaoAtual =  totalVotosP / (entry.getValue() + 1);
-        
-                    if(proporcaoAtual > maiorProporcao){
-                        maiorProporcao = proporcaoAtual;
-                        partidoEscolhido = entry.getKey();
-                    }
-
+                if (proporcaoAtual > maiorProporcao) {
+                    maiorProporcao = proporcaoAtual;
+                    partidoEscolhido = partido;
                 }
-
-
             }
-            if(partidoEscolhido!= null){
 
+            if (partidoEscolhido != null) {
                 cadeiras.put(partidoEscolhido, cadeiras.get(partidoEscolhido) + 1);
                 vagas++;
             }
-
-            cont++;
-        }
-
-        for(Map.Entry<String, Integer> entry : cadeiras.entrySet()){
-            System.out.print("Partido: " + entry.getKey());
-            System.out.println(" Cadeiras disponíveis: " + entry.getValue());
         }
 
         return cadeiras;
-
     }
 
-
-
-    public Map<String,Integer> Eleitos(Map<String,Integer> cadeiras, Map<String,Integer> votosPorCandidato, int q_e){
-
+    public Map<String, Integer> Eleitos(Map<String, Integer> cadeiras, Map<String, Integer> votosPorCandidato, int quocienteEleitoral) {
         Map<String, Integer> candidatosEleitos = new HashMap<>();
-        String Eleito = " ";
-        List<String> num_cadeira = new ArrayList<>();
+        int limiteDesempenho = (int) Math.ceil(0.1 * quocienteEleitoral); // 10% do QE
 
+        // Mapa auxiliar para agrupar candidatos por partido
+        Map<String, List<Map.Entry<String, Integer>>> candidatosPorPartido = new HashMap<>();
 
-        for(Map.Entry<String,Integer> entry : cadeiras.entrySet()){
-            String partido = entry.getKey();
-            int qtd = entry.getValue();
+        // Agrupa os candidatos por partido
+        for (Map.Entry<String, Integer> entrada : votosPorCandidato.entrySet()) {
+            String candidato = entrada.getKey();
+            int votos = entrada.getValue();
 
-            for(Map.Entry<String, Integer> entrada : votosPorCandidato.entrySet()){
-    
-                int dez_p = (q_e * 10) / 100;
-    
-                
-                if(entry.getValue() > dez_p){
-                    System.out.println(entrada.getKey() + " Eleito");
-                } else {
-                    System.out.println(entrada.getKey() + " Não eleito");
-    
-                }
-    
+            // Extrai o código do partido (os dois primeiros dígitos após "Candidato ")
+            String[] partes = candidato.split(" ");
+            if (partes.length < 2) continue; // Validação para evitar erros em nomes malformados
+
+            String codigoCompleto = partes[1];
+            String partido = codigoCompleto.substring(0, 2); // Os dois primeiros caracteres representam o partido
+
+            // Apenas candidatos que atingem o limite de desempenho individual são considerados
+            if (votos >= limiteDesempenho) {
+                candidatosPorPartido.putIfAbsent(partido, new ArrayList<>());
+                candidatosPorPartido.get(partido).add(entrada);
+            } else {
+                System.out.println(candidato + " não atingiu o limite de desempenho individual (votos: " + votos + ", necessário: " + limiteDesempenho + ")");
             }
         }
 
+        // Ordena os candidatos dentro de cada partido pelos votos (do maior para o menor)
+        for (Map.Entry<String, List<Map.Entry<String, Integer>>> entry : candidatosPorPartido.entrySet()) {
+            entry.getValue().sort((a, b) -> b.getValue().compareTo(a.getValue())); // Ordena por votos decrescentes
+        }
 
+        // Distribui as cadeiras para os partidos
+        for (Map.Entry<String, Integer> partido : cadeiras.entrySet()) {
+            String legenda = partido.getKey();
+            int cadeirasDisponiveis = partido.getValue();
 
+            // Verifica se há candidatos no partido e distribui as cadeiras
+            List<Map.Entry<String, Integer>> candidatos = candidatosPorPartido.get(legenda);
+            if (candidatos != null) {
+                for (int i = 0; i < Math.min(cadeirasDisponiveis, candidatos.size()); i++) {
+                    Map.Entry<String, Integer> candidatoEleito = candidatos.get(i);
+                    candidatosEleitos.put(candidatoEleito.getKey(), candidatoEleito.getValue());
+                }
+            } else {
+                System.out.println("Partido " + legenda + " não tem candidatos elegíveis para preencher " + cadeirasDisponiveis + " cadeiras.");
+            }
+        }
 
         return candidatosEleitos;
-
-    }
-
-
-	public double calcularQuocienteEleitoral(String caminhoArquivo, int numeroCadeiras) {
-		Map<String, Integer> totais = processarVotos(caminhoArquivo);
-		int totalVotosValidos = totais.get("Total de Votos") - totais.get("Votos em Branco") - totais.get("Votos Nulos");
-
-		if (numeroCadeiras <= 0 || totalVotosValidos <= 0) {
-			throw new IllegalArgumentException("Número de cadeiras ou total de votos válidos inválidos.");
-		}
-
-		return (double) totalVotosValidos / numeroCadeiras;
-	}
-
-	public Map<String, Integer> calcularQuocientePartidario(String caminhoArquivo, int numeroCadeiras) {
-		double quocienteEleitoral = calcularQuocienteEleitoral(caminhoArquivo, numeroCadeiras);
-
-		// Criar um mapa para armazenar os votos por legenda
-		Map<String, Integer> votosPorLegenda = new HashMap<>();
-		try {
-			List<String> linhas = Files.readAllLines(Paths.get(caminhoArquivo));
-			for (String linha : linhas) {
-				String[] partes = linha.split(";");
-				if (partes.length < 2) {
-					continue; 
-				}
-
-				String codigo = partes[1];
-				if (codigo.equals("0") || codigo.equals("1")) {
-					continue; 
-				}
-
-				String legenda = codigo.substring(0, 2);
-
-				// Atualizar os votos da legenda no mapa
-				if (votosPorLegenda.containsKey(legenda)) {
-					int votosAtuais = votosPorLegenda.get(legenda);
-					votosPorLegenda.put(legenda, votosAtuais + 1);
-				} else {
-					votosPorLegenda.put(legenda, 1);
-				}
-			}
-		} catch (IOException e) {
-			System.out.println("Erro ao ler o arquivo: " + e.getMessage());
-		}
-
-		// Calcular o número de cadeiras para cada partido
-		Map<String, Integer> cadeirasPorLegenda = new HashMap<>();
-		for (String legenda : votosPorLegenda.keySet()) {
-			int votos = votosPorLegenda.get(legenda);
-
-			// Dividir os votos da legenda pelo QE para obter as cadeiras
-			int cadeiras = (int) (votos / quocienteEleitoral);
-			cadeirasPorLegenda.put(legenda, cadeiras);
-		}
-
-		// Retornar o resultado
-		return cadeirasPorLegenda;
     }
 }
